@@ -23,10 +23,10 @@ jobs:
         env:
           PACKAGES: >
             ca-certificates ccache cmake file g++-8 git libarchive-dev libneon27-dev libnfs-dev libpcre3-dev libsmbclient-dev
-            libssh-dev libuchardet-dev libxerces-c-dev libxi-dev libtree makeself patch patchelf quilt wget
+            libssh-dev libuchardet-dev libxml2-dev libxi-dev libtree makeself patch patchelf quilt wget
         run: |
           if [ "${{ matrix.distro }}" = "ubuntu" ]; then
-            echo "deb [trusted=yes] http://ppa.launchpad.net/far2l-team/tools/ubuntu xenial main" | tee /etc/apt/sources.list.d/far2l-team.list
+            echo "deb [trusted=yes] http://ppa.launchpad.net/far2l-team/tools/ubuntu bionic main" | tee /etc/apt/sources.list.d/far2l-team.list
             echo "deb [trusted=yes] http://ppa.launchpad.net/git-core/ppa/ubuntu bionic main" | tee /etc/apt/sources.list.d/git-core.list
             apt update -qq && apt install -y --no-install-recommends ${{ env.PACKAGES }}
           fi
@@ -60,7 +60,7 @@ jobs:
           export CXX=g++-8
           export VERSION=${TAG}.git$(date -d $DATE +%Y%m%d)
           export PKG_NAME=far2l_${VERSION}-$(uname -m)-glibc
-          bash -x build_far2l.sh
+          bash build_far2l.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
@@ -102,7 +102,7 @@ jobs:
           arch: ${{ matrix.arch }}
           packages: >
             bash build-base ccache cmake coreutils findutils gawk git grep libarchive-dev libnfs-dev libssh-dev libtree
-            libxi-dev linux-headers neon-dev patchelf pcre-dev perl samba-dev tar uchardet-dev wget xerces-c-dev xz
+            libxi-dev linux-headers neon-dev patchelf pcre-dev perl samba-dev tar uchardet-dev wget libxml2-dev xz
           shell-name: alpine.sh
 
       - name: Add extra build-deps to chroot
@@ -123,7 +123,7 @@ jobs:
         run: |
           export VERSION=${TAG}.git$(date -d $DATE +%Y%m%d)
           export PKG_NAME=far2l_${VERSION}-${ARCH}
-          bash -x build_far2l.sh
+          bash build_far2l.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
@@ -144,7 +144,7 @@ jobs:
         env:
           PACKAGES: >
             ccache cmake desktop-file-utils file g++ libarchive-dev libfuse2 libneon27-dev libnfs-dev libpcre3-dev
-            libsmbclient-dev libssh-dev libuchardet-dev libwxgtk3.0-gtk3-dev libxerces-c-dev libxi-dev patch
+            libsmbclient-dev libssh-dev libuchardet-dev libwxgtk3.0-gtk3-dev libxml2-dev libxi-dev patch
             patchelf python3-minimal python3-wheel quilt squashfs-tools wget
         run: |
           sudo apt update -qq && sudo apt install -y --no-install-recommends ${{ env.PACKAGES }}
@@ -173,7 +173,7 @@ jobs:
           TAG: ${{ github.event.client_payload.tag }}
           PLUGINS_EXTRA: false
         run: |
-          bash -x build_far2l.sh
+          bash build_far2l.sh
 
       - name: Build AppImage
         env:

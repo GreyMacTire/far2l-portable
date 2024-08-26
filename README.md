@@ -17,4 +17,5 @@ with wx-GUI
 ```
 wget -qO- https://github.com/spvkgn/far2l-portable/releases/download/latest/far2l-x86_64.AppImage.tar | tar -xv -C /tmp && /tmp/far2l*.AppImage
 ```
+-----
 Or get the binary in [Releases](https://github.com/spvkgn/far2l-portable/releases)
