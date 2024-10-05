@@ -171,7 +171,7 @@ jobs:
           DATE: ${{ github.event.client_payload.date }}
           SHA: ${{ github.event.client_payload.sha }}
           TAG: ${{ github.event.client_payload.tag }}
-          PLUGINS_EXTRA: false
+          PLUGINS_EXTRA: true
         run: |
           bash build_far2l.sh
 
