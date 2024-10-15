@@ -3,12 +3,12 @@ run-name: 🌙 Nightly build 🚀 ${{ github.event.client_payload.tag }}-${{ git
 
 on:
   repository_dispatch:
-    types: [build-nightly]
+    types: [ build-nightly ]
 
 jobs:
   build-portable-glibc:
     name: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         include:
@@ -72,11 +72,10 @@ jobs:
 
   build-portable-musl:
     name: build ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-          arch: [x86_64, x86, aarch64, armhf, armv7, ppc64le, s390x]
-          os: [ubuntu-latest]
+        arch: [ x86_64, x86, aarch64, armhf, armv7, ppc64le, s390x ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -138,7 +137,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-22.04]
+        os: [ ubuntu-22.04 ]
     steps:
       - name: Add build dependencies
         env:
@@ -213,8 +212,8 @@ jobs:
           if-no-files-found: error
 
   release:
-    name: Update Nightly release
-    needs: [build-portable-glibc, build-portable-musl, build-AppImage]
+    name: Update release
+    needs: [ build-portable-glibc, build-portable-musl, build-AppImage ]
     permissions:
       contents: write
     runs-on: ubuntu-latest
