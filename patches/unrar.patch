@@ -1,0 +1,13 @@
+diff --git a/multiarc/src/formats/rar/unrar/os.hpp b/multiarc/src/formats/rar/unrar/os.hpp
+index e2d65a3..e8e2b7f 100644
+--- a/multiarc/src/formats/rar/unrar/os.hpp
++++ b/multiarc/src/formats/rar/unrar/os.hpp
+@@ -144,7 +144,7 @@
+ #include <locale.h>
+ 
+ #ifdef __GNUC__
+-  #if defined(__i386__) || defined(__x86_64__)
++  #if defined(__x86_64__)
+     #include <x86intrin.h>
+     
+     #define USE_SSE
