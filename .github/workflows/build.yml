@@ -1,13 +1,44 @@
 name: build
-run-name: 🌙 Nightly build 🚀 ${{ github.event.client_payload.tag }}-${{ github.event.client_payload.date }}-${{ github.event.client_payload.sha }}
+run-name: ${{ github.event_name == 'repository_dispatch' && format('🌙 Nightly build 🚀 {0}-{1}-{2}', github.event.client_payload.tag, github.event.client_payload.date, github.event.client_payload.sha) || null }}
 
 on:
+  workflow_dispatch:
   repository_dispatch:
     types: [ build-nightly ]
 
+env:
+  REPO: 'elfmz/far2l'
+
 jobs:
+  check:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    outputs:
+      date: ${{ steps.gh.outputs.date }}
+      sha: ${{ steps.gh.outputs.sha }}
+      tag: ${{ steps.gh.outputs.tag }}
+      url: ${{ steps.gh.outputs.url }}
+      message: ${{ steps.gh.outputs.message }}
+    steps:
+      - name: GH API
+        id: gh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH=$(gh api repos/$REPO --jq '.default_branch')
+          DATE=$(gh api repos/$REPO/commits/$BRANCH --jq '.commit.committer.date')
+          {
+            echo "date=$(date --utc -d $DATE +%F)"
+            echo "sha=$(gh api repos/$REPO/commits/$BRANCH --jq '.sha[0:7]')"
+            echo "tag=$(wget -qO- https://raw.githubusercontent.com/$REPO/$BRANCH/packaging/version)"
+            echo "url=$(gh api repos/$REPO/commits/$BRANCH --jq '.html_url')"
+            echo "message=$(gh api repos/$REPO/commits/$BRANCH | jq -c '.commit.message' | perl -pe 's/^"|"$//g;' -pe "s|(?=#\d+)|$REPO|g")"
+          } >> $GITHUB_OUTPUT
+
   build-portable-glibc:
     name: build
+    needs: check
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -17,6 +48,7 @@ jobs:
     container: ${{ matrix.distro }}:${{ matrix.version }}
     env:
       # workaround for checkout@v3, https://github.com/actions/checkout/issues/1590
+      GHA_USE_NODE_20: false
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
       - name: Add build dependencies
@@ -37,7 +69,7 @@ jobs:
       - name: Checkout far2l
         uses: actions/checkout@v3
         with:
-          repository: ${{ github.event.client_payload.repo }}
+          repository: ${{ env.REPO }}
           path: far2l
 
       - name: Setup ccache
@@ -50,9 +82,9 @@ jobs:
 
       - name: Build far2l
         env:
-          DATE: ${{ github.event.client_payload.date }}
-          SHA: ${{ github.event.client_payload.sha }}
-          TAG: ${{ github.event.client_payload.tag }}
+          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
+          SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
+          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
           STANDALONE: true
           WXGUI: false
         run: |
@@ -72,10 +104,19 @@ jobs:
 
   build-portable-musl:
     name: build ${{ matrix.arch }}
+    needs: check
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        arch: [ x86_64, x86, aarch64, armhf, armv7, ppc64le, s390x ]
+        arch:
+          - x86_64
+          - x86
+          - aarch64
+          - armhf
+          - armv7
+          - ppc64le
+          - s390x
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,7 +124,7 @@ jobs:
       - name: Checkout far2l
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.client_payload.repo }}
+          repository: ${{ env.REPO }}
           path: far2l
 
       - name: Setup ccache
@@ -94,7 +135,7 @@ jobs:
           restore-keys: |
             ccache-${{ matrix.arch }}-
 
-      - name: Setup Alpine Linux for ${{ matrix.arch }}
+      - name: Setup Alpine Linux
         uses: jirutka/setup-alpine@v1
         with:
           branch: v3.18
@@ -112,9 +153,9 @@ jobs:
 
       - name: Build far2l inside chroot
         env:
-          DATE: ${{ github.event.client_payload.date }}
-          SHA: ${{ github.event.client_payload.sha }}
-          TAG: ${{ github.event.client_payload.tag }}
+          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
+          SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
+          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
           ARCH: ${{ matrix.arch }}
           STANDALONE: true
           WXGUI: false
@@ -134,6 +175,8 @@ jobs:
 
   build-AppImage:
     name: build AppImage
+    needs: check
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -154,7 +197,7 @@ jobs:
       - name: Checkout far2l
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.client_payload.repo }}
+          repository: ${{ env.REPO }}
           path: far2l
 
       - name: Setup ccache
@@ -167,17 +210,17 @@ jobs:
 
       - name: Build far2l
         env:
-          DATE: ${{ github.event.client_payload.date }}
-          SHA: ${{ github.event.client_payload.sha }}
-          TAG: ${{ github.event.client_payload.tag }}
+          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
+          SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
+          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
           PLUGINS_EXTRA: true
         run: |
           bash build_far2l.sh
 
       - name: Build AppImage
         env:
-          DATE: ${{ github.event.client_payload.date }}
-          TAG: ${{ github.event.client_payload.tag }}
+          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
+          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
         run: |
           export ARCH=$(uname -m)
           export APPIMAGE_VERSION=$TAG
@@ -213,10 +256,17 @@ jobs:
 
   release:
     name: Update release
-    needs: [ build-portable-glibc, build-portable-musl, build-AppImage ]
+    needs: [ check, build-portable-glibc, build-portable-musl, build-AppImage ]
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     permissions:
       contents: write
     runs-on: ubuntu-latest
+    env:
+      DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
+      SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
+      TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
+      URL: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.url || needs.check.outputs.url }}
+      MESSAGE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.message || needs.check.outputs.message }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v3
@@ -229,9 +279,9 @@ jobs:
         with:
           prerelease: false
           tag_name: latest
-          name: ${{ github.event.client_payload.date }}
+          name: ${{ env.DATE }}
           body: |
-            ${{ github.event.client_payload.url }}: ${{ github.event.client_payload.message }}
+            ${{ format('{0}: {1}', env.URL, env.MESSAGE) }}
           files: |
             ./**/far2l*.run.tar
             ./**/far2l*.AppImage.tar
@@ -244,7 +294,7 @@ jobs:
           gistID: f53cb6c1d56b0eaf40c88d607fc5fef1
           filename: far2l-portable.json
           label: version
-          message: ${{ github.event.client_payload.tag }}-${{ github.event.client_payload.date }}-${{ github.event.client_payload.sha }}
+          message: ${{ format('{0}-{1}-{2}', env.TAG, env.DATE, env.SHA) }}
           color: blue
 
       - name: Delete workflow runs
