@@ -64,16 +64,16 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Checkout far2l
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ env.REPO }}
           path: far2l
 
       - name: Setup ccache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.ccache
           key: ccache-${{ matrix.distro }}-${{ matrix.version }}-${{ github.event.client_payload.sha }}
@@ -95,7 +95,7 @@ jobs:
           bash build_far2l.sh
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: far2l-${{ matrix.distro }}-${{ matrix.version }}
           path: |
@@ -166,7 +166,7 @@ jobs:
           bash build_far2l.sh
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: far2l-${{ matrix.arch }}
           path: |
@@ -247,7 +247,7 @@ jobs:
           tar cvf ${PKG_NAME/_${VERSION}}.AppImage.tar far2l*.AppImage
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: far2l-AppImage-${{ matrix.os }}
           path: |
@@ -269,7 +269,7 @@ jobs:
       MESSAGE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.message || needs.check.outputs.message }}
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Upload release assets
         id: assets
