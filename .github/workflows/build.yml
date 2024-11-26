@@ -44,18 +44,15 @@ jobs:
       matrix:
         include:
           - distro: ubuntu
-            version: '18.04'
+            version: '20.04'
     container: ${{ matrix.distro }}:${{ matrix.version }}
-    env:
-      # workaround for checkout@v3, https://github.com/actions/checkout/issues/1590
-      GHA_USE_NODE_20: false
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
       - name: Add build dependencies
         env:
+          DEBIAN_FRONTEND: noninteractive
           PACKAGES: >
-            ca-certificates ccache cmake file g++-8 git libarchive-dev libneon27-dev libnfs-dev libpcre3-dev libsmbclient-dev
-            libssh-dev libuchardet-dev libxml2-dev libxi-dev libtree makeself patch patchelf quilt wget
+            ca-certificates ccache cmake file g++ git libarchive-dev libneon27-dev libnfs-dev libpcre3-dev libsmbclient-dev
+            libssh-dev libuchardet-dev libxml2-dev libxi-dev libtree make makeself patch patchelf quilt wget
         run: |
           if [ "${{ matrix.distro }}" = "ubuntu" ]; then
             echo "deb [trusted=yes] http://ppa.launchpad.net/far2l-team/tools/ubuntu bionic main" | tee /etc/apt/sources.list.d/far2l-team.list
@@ -88,8 +85,6 @@ jobs:
           STANDALONE: true
           WXGUI: false
         run: |
-          export CC=gcc-8
-          export CXX=g++-8
           export VERSION=${TAG}.git$(date -d $DATE +%Y%m%d)
           export PKG_NAME=far2l_${VERSION}-$(uname -m)-glibc
           bash build_far2l.sh

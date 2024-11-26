@@ -7,7 +7,7 @@ with TTY X/Xi backend
 ```
 wget -qO- https://github.com/spvkgn/far2l-portable/releases/download/latest/far2l-$(uname -m).run.tar | tar -xv -C /tmp && /tmp/far2l*.run
 ```
-* built on Ubuntu 18.04 | ~34 MB (x86_64 only)
+* built on Ubuntu 20.04 | ~35 MB (x86_64 only)
 ```
 wget -qO- https://github.com/spvkgn/far2l-portable/releases/download/latest/far2l-x86_64-glibc.run.tar | tar -xv -C /tmp && /tmp/far2l*.run
 ```
