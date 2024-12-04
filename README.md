@@ -3,7 +3,7 @@
 ## Download and run
 ### Self-extractable tar-archive
 with TTY X/Xi backend
-* built on Alpine | ~20 MB (x86_64 x86 aarch64 armhf armv7 ppc64le s390x)
+* built on Alpine | ~20 MB (x86_64 x86 aarch64 armhf armv7)
 ```
 wget -qO- https://github.com/spvkgn/far2l-portable/releases/download/latest/far2l-$(uname -m).run.tar | tar -xv -C /tmp && /tmp/far2l*.run
 ```

@@ -51,7 +51,7 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
           PACKAGES: >
-            ca-certificates ccache cmake file g++ git libarchive-dev libneon27-dev libnfs-dev libpcre3-dev libsmbclient-dev
+            ca-certificates ccache cmake file g++ git libarchive-dev libneon27-dev libnfs-dev libsmbclient-dev
             libssh-dev libuchardet-dev libxml2-dev libxi-dev libtree make makeself patch patchelf quilt wget
         run: |
           if [ "${{ matrix.distro }}" = "ubuntu" ]; then
@@ -110,8 +110,8 @@ jobs:
           - aarch64
           - armhf
           - armv7
-          - ppc64le
-          - s390x
+          # - ppc64le
+          # - s390x
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -137,7 +137,7 @@ jobs:
           arch: ${{ matrix.arch }}
           packages: >
             bash build-base ccache cmake coreutils findutils gawk git grep libarchive-dev libnfs-dev libssh-dev libtree
-            libxi-dev linux-headers neon-dev patchelf pcre-dev perl samba-dev tar uchardet-dev wget libxml2-dev xz
+            libxi-dev linux-headers neon-dev patchelf perl samba-dev tar uchardet-dev wget libxml2-dev xz
           shell-name: alpine.sh
 
       - name: Add extra build-deps to chroot
@@ -180,7 +180,7 @@ jobs:
       - name: Add build dependencies
         env:
           PACKAGES: >
-            ccache cmake desktop-file-utils file g++ libarchive-dev libfuse2 libneon27-dev libnfs-dev libpcre3-dev
+            ccache cmake desktop-file-utils file g++ libarchive-dev libfuse2 libneon27-dev libnfs-dev
             libsmbclient-dev libssh-dev libuchardet-dev libwxgtk3.0-gtk3-dev libxml2-dev libxi-dev patch
             patchelf python3-minimal python3-wheel quilt squashfs-tools wget
         run: |
