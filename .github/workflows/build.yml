@@ -208,7 +208,7 @@ jobs:
           DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
           SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
           TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
-          PLUGINS_EXTRA: true
+          PLUGINS_EXTRA: false
         run: |
           bash build_far2l.sh
 

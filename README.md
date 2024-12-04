@@ -12,7 +12,7 @@ wget -qO- https://github.com/spvkgn/far2l-portable/releases/download/latest/far2
 wget -qO- https://github.com/spvkgn/far2l-portable/releases/download/latest/far2l-x86_64-glibc.run.tar | tar -xv -C /tmp && /tmp/far2l*.run
 ```
 ### AppImage
-with wx-GUI and some extra plugins
+with wx-GUI
 * built on Ubuntu 22.04 | ~55 MB (x86_64 only)
 ```
 wget -qO- https://github.com/spvkgn/far2l-portable/releases/download/latest/far2l-x86_64.AppImage.tar | tar -xv -C /tmp && /tmp/far2l*.AppImage
