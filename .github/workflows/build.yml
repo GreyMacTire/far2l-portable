@@ -52,7 +52,7 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
           PACKAGES: >
             ca-certificates ccache cmake file g++ git libarchive-dev libneon27-dev libnfs-dev libsmbclient-dev
-            libssh-dev libuchardet-dev libxml2-dev libxi-dev libtree make makeself patch patchelf quilt wget
+            libssh-dev libuchardet-dev libxml2-dev libxi-dev libtree make makeself patch patchelf quilt wget xz-utils
         run: |
           if [ "${{ matrix.distro }}" = "ubuntu" ]; then
             echo "deb [trusted=yes] http://ppa.launchpad.net/far2l-team/tools/ubuntu bionic main" | tee /etc/apt/sources.list.d/far2l-team.list
@@ -239,7 +239,7 @@ jobs:
           VERSION=${TAG}.git$(date -d $DATE +%Y%m%d)
           PKG_NAME=far2l_${VERSION}-${ARCH}
           mv far2l*.AppImage $PKG_NAME.AppImage
-          tar cvf ${PKG_NAME/_${VERSION}}.AppImage.tar far2l*.AppImage
+          tar -cvf ${PKG_NAME/_${VERSION}}.AppImage.tar far2l*.AppImage
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

@@ -22,7 +22,6 @@ AppDir:
       - libarchive13
       - libneon27
       - libnfs13
-      - libpcre3
       - librsvg2-common
       - libsmbclient
       - libuchardet0
