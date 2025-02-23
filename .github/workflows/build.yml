@@ -73,9 +73,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ccache-${{ matrix.distro }}-${{ matrix.version }}-${{ github.event.client_payload.sha }}
-          restore-keys: |
-            ccache-${{ matrix.distro }}-${{ matrix.version }}-
+          key: ccache-${{ matrix.distro }}-${{ matrix.version }}-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || github.run_id }}
+          restore-keys: ccache-${{ matrix.distro }}-${{ matrix.version }}-
 
       - name: Build far2l
         env:
@@ -93,8 +92,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: far2l-${{ matrix.distro }}-${{ matrix.version }}
-          path: |
-            ./**/far2l*.tar*
+          path: ./**/far2l*.tar*
           if-no-files-found: error
 
   build-portable-musl:
@@ -126,9 +124,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ccache-${{ matrix.arch }}-${{ github.event.client_payload.sha }}
-          restore-keys: |
-            ccache-${{ matrix.arch }}-
+          key: ccache-${{ matrix.arch }}-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || github.run_id }}
+          restore-keys: ccache-${{ matrix.arch }}-
 
       - name: Setup Alpine Linux
         uses: jirutka/setup-alpine@v1
@@ -164,8 +161,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: far2l-${{ matrix.arch }}
-          path: |
-            ./**/far2l*.tar*
+          path: ./**/far2l*.tar*
           if-no-files-found: error
 
   build-AppImage:
@@ -183,8 +179,7 @@ jobs:
             ccache cmake desktop-file-utils file g++ libarchive-dev libfuse2 libneon27-dev libnfs-dev
             libsmbclient-dev libssh-dev libuchardet-dev libwxgtk3.0-gtk3-dev libxml2-dev libxi-dev patch
             patchelf python3-minimal python3-wheel quilt squashfs-tools wget
-        run: |
-          sudo apt update -qq && sudo apt install -y --no-install-recommends ${{ env.PACKAGES }}
+        run: sudo apt update -qq && sudo apt install -y --no-install-recommends ${{ env.PACKAGES }}
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -199,9 +194,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ccache-${{ matrix.os }}-${{ github.event.client_payload.sha }}
-          restore-keys: |
-            ccache-${{ matrix.os }}-
+          key: ccache-${{ matrix.os }}-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || github.run_id }}
+          restore-keys: ccache-${{ matrix.os }}-
 
       - name: Build far2l
         env:
@@ -209,8 +203,7 @@ jobs:
           SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
           TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
           PLUGINS_EXTRA: false
-        run: |
-          bash build_far2l.sh
+        run: bash build_far2l.sh
 
       - name: Build AppImage
         env:
@@ -230,9 +223,9 @@ jobs:
           # static runtime
           wget --no-check-certificate -O runtime https://github.com/probonopd/static-tools/releases/download/2023/runtime-fuse2-$ARCH
 
-          python -m venv _venv && source _venv/bin/activate
-          pip install git+https://github.com/AppImageCrafters/appimage-builder.git
-          appimage-builder --skip-appimage --recipe AppImageBuilder.yml
+          pip install -U pipenv
+          pipenv install -e git+https://github.com/AppImageCrafters/appimage-builder.git#egg=appimage-builder
+          pipenv run appimage-builder --skip-appimage --recipe AppImageBuilder.yml
           APPIMAGE_EXTRACT_AND_RUN=1 VERSION=$TAG ./appimagetool -v --runtime-file runtime AppDir
 
           # Put AppImage into .tar
@@ -245,8 +238,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: far2l-AppImage-${{ matrix.os }}
-          path: |
-            ./**/far2l*.tar*
+          path: ./**/far2l*.tar*
           if-no-files-found: error
 
   release:
