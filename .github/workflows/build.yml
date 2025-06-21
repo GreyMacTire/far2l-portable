@@ -223,7 +223,7 @@ jobs:
           # static runtime
           wget --no-check-certificate -O runtime https://github.com/probonopd/static-tools/releases/download/2023/runtime-fuse2-$ARCH
 
-          pip install -U pipenv
+          pip install -U pipenv==2025.0.2
           pipenv install -e git+https://github.com/AppImageCrafters/appimage-builder.git#egg=appimage-builder
           pipenv run appimage-builder --skip-appimage --recipe AppImageBuilder.yml
           APPIMAGE_EXTRACT_AND_RUN=1 VERSION=$TAG ./appimagetool -v --runtime-file runtime AppDir
