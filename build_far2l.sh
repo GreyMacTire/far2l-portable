@@ -12,6 +12,9 @@ fi
 if [[ "$WXGUI" == "false" ]]; then
   CMAKE_OPTS+=( "-DUSEWX=no" )
 fi
+if [[ "$ARCH" != "x86_64" ]]; then
+  CMAKE_OPTS+=( "-DARCLITE=no" )
+fi
 if [[ "$PLUGINS_EXTRA" == "true" ]]; then
   ( cd $REPO_DIR/far2l
     for plug in netcfgplugin sqlplugin processes ; do
@@ -23,7 +26,7 @@ if [[ "$PLUGINS_EXTRA" == "true" ]]; then
     done )
 fi
 if [[ "$PLUGINS" == "false" ]]; then
-  CMAKE_OPTS+=( "-DCOLORER=no -DNETROCKS=no -DALIGN=no -DAUTOWRAP=no -DCALC=no \
+  CMAKE_OPTS+=( "-DARCLITE=no -DCOLORER=no -DNETROCKS=no -DALIGN=no -DAUTOWRAP=no -DCALC=no \
     -DCOMPARE=no -DDRAWLINE=no -DEDITCASE=no -DEDITORCOMP=no -DFILECASE=no \
     -DINCSRCH=no -DINSIDE=no -DMULTIARC=no -DSIMPLEINDENT=no -DTMPPANEL=no" )
 fi

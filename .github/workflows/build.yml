@@ -84,6 +84,7 @@ jobs:
           STANDALONE: true
           WXGUI: false
         run: |
+          export ARCH=$(uname -m)
           export VERSION=${TAG}.git$(date -d $DATE +%Y%m%d)
           export PKG_NAME=far2l_${VERSION}-$(uname -m)-glibc
           bash build_far2l.sh
@@ -203,7 +204,9 @@ jobs:
           SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
           TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
           PLUGINS_EXTRA: false
-        run: bash build_far2l.sh
+        run: |
+          export ARCH=$(uname -m)
+          bash build_far2l.sh
 
       - name: Build AppImage
         env:
