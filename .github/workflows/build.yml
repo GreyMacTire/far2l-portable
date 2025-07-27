@@ -1,8 +1,14 @@
 name: build
-run-name: ${{ github.event_name == 'repository_dispatch' && format('🌙 Nightly build 🚀 {0}-{1}-{2}', github.event.client_payload.tag, github.event.client_payload.date, github.event.client_payload.sha) || null }}
+run-name: ${{ github.event_name == 'repository_dispatch' && format('🌙 Nightly build 🚀 {0}-{1}-{2}', github.event.client_payload.tag, github.event.client_payload.date, github.event.client_payload.sha) || (github.event_name == 'workflow_dispatch' && format('🏷️ Release build {0}', github.event.inputs.version_tag) || 'Manual build') }}
 
 on:
   workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Version tag (e.g., v_2.6.5)'
+        required: false
+        type: string
+        default: ''
   repository_dispatch:
     types: [ build-nightly ]
 
@@ -80,7 +86,7 @@ jobs:
         env:
           DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
           SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag || (github.event_name == 'repository_dispatch' && github.event.client_payload.tag) || needs.check.outputs.tag }}
           STANDALONE: true
           WXGUI: false
         run: |
@@ -148,7 +154,7 @@ jobs:
         env:
           DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
           SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag || (github.event_name == 'repository_dispatch' && github.event.client_payload.tag) || needs.check.outputs.tag }}
           ARCH: ${{ matrix.arch }}
           STANDALONE: true
           WXGUI: false
@@ -202,7 +208,7 @@ jobs:
         env:
           DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
           SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag || (github.event_name == 'repository_dispatch' && github.event.client_payload.tag) || needs.check.outputs.tag }}
           PLUGINS_EXTRA: false
         run: |
           export ARCH=$(uname -m)
@@ -211,7 +217,7 @@ jobs:
       - name: Build AppImage
         env:
           DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
+          TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag || (github.event_name == 'repository_dispatch' && github.event.client_payload.tag) || needs.check.outputs.tag }}
         run: |
           export ARCH=$(uname -m)
           export APPIMAGE_VERSION=$TAG
@@ -254,7 +260,7 @@ jobs:
     env:
       DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
       SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-      TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
+      TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag || (github.event_name == 'repository_dispatch' && github.event.client_payload.tag) || needs.check.outputs.tag }}
       URL: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.url || needs.check.outputs.url }}
       MESSAGE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.message || needs.check.outputs.message }}
     steps:
