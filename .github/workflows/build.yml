@@ -105,10 +105,10 @@ jobs:
       matrix:
         arch:
           - x86_64
-          - x86
-          - aarch64
-          - armhf
-          - armv7
+          # - x86
+          #- aarch64
+          #- armhf
+          # - armv7
           # - ppc64le
           # - s390x
     steps:

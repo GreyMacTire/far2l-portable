@@ -35,6 +35,8 @@ fi
 
 mkdir -p $BUILD_DIR
 cmake -S $REPO_DIR/far2l -B$REPO_DIR/far2l/$BUILD_DIR \
+  -DUSEWX=yes \
+  -DNETROCKS=no \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=/usr \
   -DCMAKE_VERBOSE_MAKEFILE=ON \
