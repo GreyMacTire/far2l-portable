@@ -1,23 +1,20 @@
 name: build
-run-name: ${{ github.event_name == 'repository_dispatch' && format('🌙 Nightly build 🚀 {0}-{1}-{2}', github.event.client_payload.tag, github.event.client_payload.date, github.event.client_payload.sha) || (github.event_name == 'workflow_dispatch' && format('🏷️ Release build {0}', github.event.inputs.version_tag) || 'Manual build') }}
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('🏷️ Release build {0}', github.event.inputs.version_tag) || 'Manual build' }}
 
 on:
   workflow_dispatch:
     inputs:
       version_tag:
-        description: 'Version tag (e.g., v_2.6.5)'
-        required: false
+        description: 'Version tag from github.com/elfmz/far2l (e.g., v_2.6.5)'
+        required: true
         type: string
         default: ''
-  repository_dispatch:
-    types: [ build-nightly ]
 
 env:
   REPO: 'elfmz/far2l'
 
 jobs:
   check:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       date: ${{ steps.gh.outputs.date }}
@@ -79,14 +76,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ccache-${{ matrix.distro }}-${{ matrix.version }}-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || github.run_id }}
+          key: ccache-${{ matrix.distro }}-${{ matrix.version }}-${{ github.run_id }}
           restore-keys: ccache-${{ matrix.distro }}-${{ matrix.version }}-
 
       - name: Build far2l
         env:
-          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-          SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-          TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag || (github.event_name == 'repository_dispatch' && github.event.client_payload.tag) || needs.check.outputs.tag }}
+          DATE: ${{ needs.check.outputs.date }}
+          SHA: ${{ needs.check.outputs.sha }}
+          TAG: ${{ github.event.inputs.version_tag || needs.check.outputs.tag }}
           STANDALONE: true
           WXGUI: false
         run: |
@@ -131,7 +128,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ccache-${{ matrix.arch }}-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || github.run_id }}
+          key: ccache-${{ matrix.arch }}-${{ github.run_id }}
           restore-keys: ccache-${{ matrix.arch }}-
 
       - name: Setup Alpine Linux
@@ -152,9 +149,9 @@ jobs:
 
       - name: Build far2l inside chroot
         env:
-          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-          SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-          TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag || (github.event_name == 'repository_dispatch' && github.event.client_payload.tag) || needs.check.outputs.tag }}
+          DATE: ${{ needs.check.outputs.date }}
+          SHA: ${{ needs.check.outputs.sha }}
+          TAG: ${{ github.event.inputs.version_tag || needs.check.outputs.tag }}
           ARCH: ${{ matrix.arch }}
           STANDALONE: true
           WXGUI: false
@@ -201,14 +198,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.ccache
-          key: ccache-${{ matrix.os }}-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || github.run_id }}
+          key: ccache-${{ matrix.os }}-${{ github.run_id }}
           restore-keys: ccache-${{ matrix.os }}-
 
       - name: Build far2l
         env:
-          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-          SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-          TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag || (github.event_name == 'repository_dispatch' && github.event.client_payload.tag) || needs.check.outputs.tag }}
+          DATE: ${{ needs.check.outputs.date }}
+          SHA: ${{ needs.check.outputs.sha }}
+          TAG: ${{ github.event.inputs.version_tag || needs.check.outputs.tag }}
           PLUGINS_EXTRA: false
         run: |
           export ARCH=$(uname -m)
@@ -216,8 +213,8 @@ jobs:
 
       - name: Build AppImage
         env:
-          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-          TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag || (github.event_name == 'repository_dispatch' && github.event.client_payload.tag) || needs.check.outputs.tag }}
+          DATE: ${{ needs.check.outputs.date }}
+          TAG: ${{ github.event.inputs.version_tag || needs.check.outputs.tag }}
         run: |
           export ARCH=$(uname -m)
           export APPIMAGE_VERSION=$TAG
@@ -258,11 +255,11 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     env:
-      DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-      SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-      TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version_tag || (github.event_name == 'repository_dispatch' && github.event.client_payload.tag) || needs.check.outputs.tag }}
-      URL: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.url || needs.check.outputs.url }}
-      MESSAGE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.message || needs.check.outputs.message }}
+      DATE: ${{ needs.check.outputs.date }}
+      SHA: ${{ needs.check.outputs.sha }}
+      TAG: ${{ github.event.inputs.version_tag || needs.check.outputs.tag }}
+      URL: ${{ needs.check.outputs.url }}
+      MESSAGE: ${{ needs.check.outputs.message }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
