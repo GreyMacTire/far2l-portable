@@ -274,7 +274,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           prerelease: false
-          tag_name: latest
+          tag_name: ${{ format('release-{0}', env.DATE) }}
           name: ${{ env.DATE }}
           body: |
             ${{ format('{0}: {1}', env.URL, env.MESSAGE) }}
