@@ -282,16 +282,16 @@ jobs:
             ./**/far2l*.run.tar
             ./**/far2l*.AppImage.tar
 
-      - name: Update version for badge
-        if: steps.assets.outcome == 'success'
-        uses: schneegans/dynamic-badges-action@v1.7.0
-        with:
-          auth: ${{ secrets.GIST_SECRET }}
-          gistID: f53cb6c1d56b0eaf40c88d607fc5fef1
-          filename: far2l-portable.json
-          label: version
-          message: ${{ format('{0}-{1}-{2}', env.TAG, env.DATE, env.SHA) }}
-          color: blue
+      # - name: Update version for badge
+      #   if: steps.assets.outcome == 'success'
+      #   uses: schneegans/dynamic-badges-action@v1.7.0
+      #   with:
+      #     auth: ${{ secrets.GIST_SECRET }}
+      #     gistID: f53cb6c1d56b0eaf40c88d607fc5fef1
+      #     filename: far2l-portable.json
+      #     label: version
+      #     message: ${{ format('{0}-{1}-{2}', env.TAG, env.DATE, env.SHA) }}
+      #     color: blue
 
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
