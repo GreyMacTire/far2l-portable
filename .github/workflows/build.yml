@@ -1,5 +1,5 @@
 name: build
-run-name: ${{ github.event_name == 'repository_dispatch' && format('🌙 Nightly build 🚀 {0}-{1}-{2}', github.event.client_payload.tag, github.event.client_payload.date, github.event.client_payload.sha) || null }}
+run-name: ${{ github.event_name == 'repository_dispatch' && format('🌙 Nightly build 🚀 {0}-{1}-{2}', github.event.client_payload.tag, github.event.client_payload.date, github.event.client_payload.sha) || '🚀 Build' }}
 
 on:
   workflow_dispatch:
@@ -10,34 +10,28 @@ env:
   REPO: 'elfmz/far2l'
 
 jobs:
-  check:
-    if: github.event_name == 'workflow_dispatch'
+  prepare:
     runs-on: ubuntu-latest
     outputs:
-      date: ${{ steps.gh.outputs.date }}
-      sha: ${{ steps.gh.outputs.sha }}
-      tag: ${{ steps.gh.outputs.tag }}
-      url: ${{ steps.gh.outputs.url }}
-      message: ${{ steps.gh.outputs.message }}
+      date: ${{ steps.date.outputs.date }}
+      sha: ${{ steps.sha.outputs.sha }}
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - name: GH API
-        id: gh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BRANCH=$(gh api repos/$REPO --jq '.default_branch')
-          DATE=$(gh api repos/$REPO/commits/$BRANCH --jq '.commit.committer.date')
-          {
-            echo "date=$(date --utc -d $DATE +%F)"
-            echo "sha=$(gh api repos/$REPO/commits/$BRANCH --jq '.sha[0:7]')"
-            echo "tag=$(wget -qO- https://raw.githubusercontent.com/$REPO/$BRANCH/packaging/version)"
-            echo "url=$(gh api repos/$REPO/commits/$BRANCH --jq '.html_url')"
-            echo "message=$(gh api repos/$REPO/commits/$BRANCH | jq -c '.commit.message' | perl -pe 's/^"|"$//g;' -pe "s|(?=#\d+)|$REPO|g")"
-          } >> $GITHUB_OUTPUT
+      - name: Get current date
+        id: date
+        run: echo "date=$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      - name: Get short SHA
+        id: sha
+        run: echo "sha=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: Get default tag
+        id: tag
+        run: echo "tag=$(date -u +%Y.%m.%d)" >> $GITHUB_OUTPUT
 
   build-portable-glibc:
     name: build ${{ matrix.arch }}-glibc
-    needs: check
+    needs: prepare
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     runs-on: ${{ matrix.os }}
     strategy:
@@ -80,14 +74,14 @@ jobs:
 
       - name: Build far2l
         env:
-          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-          SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
+          DATE: ${{ needs.prepare.outputs.date }}
+          SHA: ${{ needs.prepare.outputs.sha }}
+          TAG: ${{ needs.prepare.outputs.tag }}
           STANDALONE: true
           WXGUI: false
           ADD_7Z: true
         run: |
-          export VERSION=${TAG}.git$(date -d $DATE +%Y%m%d)
+          export VERSION=${TAG}.git$(date -u -d "$DATE" +%Y%m%d)
           export PKG_NAME=far2l_${VERSION}-$(uname -m)-glibc
           bash build_far2l.sh
 
@@ -100,7 +94,7 @@ jobs:
 
   build-portable-musl:
     name: build ${{ matrix.arch }}-musl
-    needs: check
+    needs: prepare
     #if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     if: false
     runs-on: ubuntu-22.04
@@ -149,15 +143,15 @@ jobs:
 
       - name: Build far2l inside chroot
         env:
-          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-          SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
+          DATE: ${{ needs.prepare.outputs.date }}
+          SHA: ${{ needs.prepare.outputs.sha }}
+          TAG: ${{ needs.prepare.outputs.tag }}
           ARCH: ${{ matrix.arch }}
           STANDALONE: true
           WXGUI: false
         shell: alpine.sh {0}
         run: |
-          export VERSION=${TAG}.git$(date -d $DATE +%Y%m%d)
+          export VERSION=${TAG}.git$(date -u -d "$DATE" +%Y%m%d)
           export PKG_NAME=far2l_${VERSION}-${ARCH}-musl
           bash build_far2l.sh
 
@@ -168,97 +162,17 @@ jobs:
           path: ./**/far2l*.tar*
           if-no-files-found: error
 
-  build-AppImage:
-    name: build AppImage
-    needs: check
-    #if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
-    if: false
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ ubuntu-22.04 ]
-    steps:
-      - name: Add build dependencies
-        env:
-          PACKAGES: >
-            ccache cmake desktop-file-utils file g++ libarchive-dev libfuse2 libneon27-dev libnfs-dev
-            libsmbclient-dev libssh-dev libuchardet-dev libwxgtk3.0-gtk3-dev libxml2-dev libxi-dev patch
-            patchelf python3-minimal python3-wheel quilt squashfs-tools wget
-        run: sudo apt update -qq && sudo apt install -y --no-install-recommends ${{ env.PACKAGES }}
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Checkout far2l
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.REPO }}
-          path: far2l
-
-      - name: Setup ccache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/.ccache
-          key: ccache-${{ matrix.os }}-${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || github.run_id }}
-          restore-keys: ccache-${{ matrix.os }}-
-
-      - name: Build far2l
-        env:
-          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-          SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
-          PLUGINS_EXTRA: false
-        run: bash build_far2l.sh
-
-      - name: Build AppImage
-        env:
-          DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-          TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
-        run: |
-          export ARCH=$(uname -m)
-          export APPIMAGE_VERSION=$TAG
-          export APPIMAGE_APT_ARCH=$(dpkg-architecture -qDEB_HOST_ARCH)
-          export APPIMAGE_APT_DISTRO=$(awk -F= '/^VERSION_CODENAME=/ {print $2}' /etc/os-release)
-          export APPIMAGE_ARCH=$ARCH
-          export PYTHON3_VERSION=$(py3versions -vd)
-
-          # appimagetool with Squashfs zstd compression support
-          wget --no-check-certificate -O appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$ARCH.AppImage
-          chmod +x appimagetool
-          # static runtime
-          wget --no-check-certificate -O runtime https://github.com/probonopd/static-tools/releases/download/2023/runtime-fuse2-$ARCH
-
-          pip install -U pipenv==2025.0.2
-          pipenv install -e git+https://github.com/AppImageCrafters/appimage-builder.git#egg=appimage-builder
-          pipenv run appimage-builder --skip-appimage --recipe AppImageBuilder.yml
-          APPIMAGE_EXTRACT_AND_RUN=1 VERSION=$TAG ./appimagetool -v --runtime-file runtime AppDir
-
-          # Put AppImage into .tar
-          VERSION=${TAG}.git$(date -d $DATE +%Y%m%d)
-          PKG_NAME=far2l_${VERSION}-${ARCH}
-          mv far2l*.AppImage $PKG_NAME.AppImage
-          tar -cvf ${PKG_NAME/_${VERSION}}.AppImage.tar far2l*.AppImage
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: far2l-AppImage-${{ matrix.os }}
-          path: ./**/far2l*.tar*
-          if-no-files-found: error
-
   release:
     name: Update release
-    needs: [ check, build-portable-glibc, build-portable-musl ]
+    needs: [ prepare, build-portable-glibc ]
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     permissions:
       contents: write
     runs-on: ubuntu-latest
     env:
-      DATE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.date || needs.check.outputs.date }}
-      SHA: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.sha || needs.check.outputs.sha }}
-      TAG: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.tag || needs.check.outputs.tag }}
-      URL: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.url || needs.check.outputs.url }}
-      MESSAGE: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.message || needs.check.outputs.message }}
+      DATE: ${{ needs.prepare.outputs.date }}
+      SHA: ${{ needs.prepare.outputs.sha }}
+      TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -272,24 +186,9 @@ jobs:
           only-when-changed: false
           prerelease: false
           tag_name: latest
-          name: ${{ env.DATE }}
+          name: ${{ env.TAG }}-${{ env.DATE }}
           body: |
-            ${{ format('{0}: {1}', env.URL, env.MESSAGE) }}
+            Build: ${{ env.TAG }}-${{ env.DATE }}-${{ env.SHA }}
+            Commit: ${{ github.sha }}
           files: |
             ./**/far2l*.run.tar
-            #./**/far2l*.AppImage.tar
-
-      - name: Update version for badge
-        if: steps.assets.outcome == 'success'
-        uses: schneegans/dynamic-badges-action@v1.7.0
-        with:
-          auth: ${{ secrets.GIST_SECRET }}
-          gistID: f53cb6c1d56b0eaf40c88d607fc5fef1
-          filename: far2l-portable.json
-          label: version
-          message: ${{ format('{0}-{1}-{2}', env.TAG, env.DATE, env.SHA) }}
-          color: blue
-
-      - name: Delete workflow runs
-        uses: Mattraks/delete-workflow-runs@v2
-        continue-on-error: true
