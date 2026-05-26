@@ -79,7 +79,7 @@ jobs:
           TAG: ${{ needs.prepare.outputs.tag }}
           STANDALONE: true
           WXGUI: false
-          ADD_7Z: true
+          ADD_7Z: false
         run: |
           export VERSION=${TAG}.git$(date -u -d "$DATE" +%Y%m%d)
           export PKG_NAME=far2l_${VERSION}-$(uname -m)-glibc
