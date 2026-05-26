@@ -47,10 +47,6 @@ jobs:
             arch: x64
             distro: ubuntu
             version: '20.04'
-          - os: ubuntu-22.04-arm
-            arch: arm64
-            distro: ubuntu
-            version: '20.04'
     container: ${{ matrix.distro }}:${{ matrix.version }}
     steps:
       - name: Add build dependencies
@@ -111,10 +107,10 @@ jobs:
       matrix:
         arch:
           - x86_64
-          - x86
-          - aarch64
-          - armhf
-          - armv7
+          #- x86
+          #- aarch64
+          #- armhf
+          #- armv7
           # - ppc64le
           # - s390x
     steps:
@@ -174,7 +170,8 @@ jobs:
   build-AppImage:
     name: build AppImage
     needs: check
-    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    #if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    if: false
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -250,7 +247,7 @@ jobs:
 
   release:
     name: Update release
-    needs: [ check, build-portable-glibc, build-portable-musl, build-AppImage ]
+    needs: [ check, build-portable-glibc, build-portable-musl ]
     if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     permissions:
       contents: write
@@ -279,7 +276,7 @@ jobs:
             ${{ format('{0}: {1}', env.URL, env.MESSAGE) }}
           files: |
             ./**/far2l*.run.tar
-            ./**/far2l*.AppImage.tar
+            #./**/far2l*.AppImage.tar
 
       - name: Update version for badge
         if: steps.assets.outcome == 'success'
